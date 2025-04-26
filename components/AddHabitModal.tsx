@@ -224,7 +224,7 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
               <div className="mt-3 space-y-4 pl-2 border-l-2 border-gray-700 ml-1 animate-fade-in"> 
                 {}
                 <div className=""> 
-                  <label htmlFor="goal" className="block text-sm font-medium text-gray-400 mb-1">Goal (Optional Text, e.g., '5 times', '1 chapter')</label> 
+                  <label htmlFor="goal" className="block text-sm font-medium text-gray-400 mb-1">Goal (Optional Text, e.g., &apos;5 times&apos;, &apos;1 chapter&apos;)</label> 
                   <input 
                     type="text" 
                     id="goal"
