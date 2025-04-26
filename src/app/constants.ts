@@ -40,7 +40,7 @@ export const ICON_LIST: string[] = [
     'Settings', 'Share2', 'Sheet', 'Shield', 'ShoppingBag', 'Smartphone',
     'Smile', 'Sparkles', 'Speaker', 'Star', 'Sun', 'Sunrise', 'Sunset',
     'Table', 'Tablet', 'Tag', 'Target', 'Tent', 'Terminal', 'Ticket',
-    'Timer', 'ToggleLeft', 'Tool', 'Trash2', 'TrendingUp', 'Triangle',
+    'Timer', 'ToggleLeft', 'Cog', 'Trash2', 'TrendingUp', 'Triangle',
     'Trophy', 'Truck', 'Tv', 'Umbrella', 'Unlock', 'User', 'Users',
     'Utensils', 'Vegan', 'Video', 'Volume2', 'Wallet', 'Watch',
     'Waves', 'Wifi', 'Wind', 'Wrench', 'Youtube', 'Zap',

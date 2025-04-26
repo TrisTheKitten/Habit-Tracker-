@@ -4,7 +4,7 @@ import { Habit, Category, Frequency } from '../types';
 import { COLOR_OPTIONS, ICON_LIST } from '../src/app/constants'; 
 import DynamicTablerIcon from './DynamicTablerIcon'; 
 
-// Default category option
+
 const NO_CATEGORY_ID = "__NONE__";
 const CREATE_CATEGORY_ID = "__CREATE__";
 
@@ -14,7 +14,7 @@ interface AddHabitModalProps {
   onAddHabit: (newHabitData: {
     name: string;
     description?: string;
-    goal?: number;
+    goal?: string;
     goalEndDate?: string;
     icon?: string;
     frequency: Frequency;
@@ -39,7 +39,7 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
   const [isEditMode, setIsEditMode] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [goal, setGoal] = useState<number>(0); 
+  const [goal, setGoal] = useState<string>(''); 
   const [goalEndDate, setGoalEndDate] = useState<string>(''); 
   const [frequency, setFrequency] = useState<Frequency>('daily');
   const [specificDays, setSpecificDays] = useState<number[]>([]); 
@@ -47,35 +47,35 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
   const [selectedIcon, setSelectedIcon] = useState<string | undefined>(undefined);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(NO_CATEGORY_ID); 
 
-  // State for creating a new category
+  
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryIcon, setNewCategoryIcon] = useState<string | undefined>(undefined);
   const [newCategoryColor, setNewCategoryColor] = useState<string>(COLOR_OPTIONS[1].id); 
   const [isSavingCategory, setIsSavingCategory] = useState(false);
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false); // State for advanced section
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false); 
 
-  // Populate form if editing
+  
   useEffect(() => {
     if (habitToEdit) { 
       setIsEditMode(true);
       setName(habitToEdit.name);
       setDescription(habitToEdit.description || '');
-      setGoal(habitToEdit.goal || 0);
+      setGoal(habitToEdit.goal ? String(habitToEdit.goal) : '');
       setGoalEndDate(habitToEdit.goalEndDate || ''); 
       setFrequency(habitToEdit.frequency);
       setSpecificDays(habitToEdit.specificDays || []);
       setSelectedColor(habitToEdit.color || COLOR_OPTIONS[0].id);
       setSelectedIcon(habitToEdit.icon || undefined);
-      // Use NO_CATEGORY_ID if habit has no category or category is invalid
+      
       const categoryExists = categories.some(c => c.id === habitToEdit.category);
       setSelectedCategoryId(habitToEdit.category && categoryExists ? habitToEdit.category : NO_CATEGORY_ID);
     } else {
-      // Reset form for adding new habit
+      
       setIsEditMode(false);
       setName('');
       setDescription('');
-      setGoal(0);
+      setGoal('');
       setGoalEndDate(''); 
       setFrequency('daily');
       setSpecificDays([]);
@@ -87,7 +87,7 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
       setNewCategoryIcon(undefined);
       setNewCategoryColor(COLOR_OPTIONS[1].id);
     }
-    // Reset advanced section visibility on open/edit change
+    
     setIsAdvancedOpen(false);
   }, [isOpen, habitToEdit, categories]);
 
@@ -111,14 +111,14 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
     const newHabitData = {
       name: name.trim(),
       description: description.trim() || undefined,
-      goal: goal > 0 ? goal : undefined,
+      goal: goal.trim() || undefined,
       goalEndDate: goalEndDate || undefined, 
       icon: selectedIcon, 
       frequency,
       specificDays: frequency === 'specific_days' ? specificDays : undefined,
       color: selectedColor !== COLOR_OPTIONS[0].id ? selectedColor : undefined,
       category: selectedCategoryId === NO_CATEGORY_ID ? undefined : selectedCategoryId, 
-      // Pass id only if editing
+      
       ...(isEditMode && habitToEdit ? { id: habitToEdit.id } : {}),
     };
     onAddHabit(newHabitData);
@@ -153,7 +153,7 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
         setNewCategoryIcon(undefined);
         setNewCategoryColor(COLOR_OPTIONS[1].id);
       } else {
-        // Handle error case if needed (e.g., display a message)
+        
         console.error("Failed to save the new category.");
       }
     } catch (error) {
@@ -179,20 +179,7 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
           <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Habit Name (e.g., Meditate 10 min)" required className='input-field' />
           <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (optional, e.g., why it matters)" rows={2} className='input-field resize-none' />
           
-          {/* Goal Input */}
-          <div className="mb-4">
-            <label htmlFor="goal" className="block text-sm font-medium text-gray-400 mb-1">Goal (Optional, e.g., 5 times)</label>
-            <input
-              type="number"
-              id="goal"
-              value={goal}
-              onChange={(e) => setGoal(Math.max(0, parseInt(e.target.value) || 0))}
-              className="w-full px-3 py-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-teal-500 text-white"
-              placeholder="e.g., 5"
-            />
-          </div>
-
-          {/* Frequency Selection */}
+          {}
           <div>
             <label htmlFor="frequencySelect" className="block text-sm font-medium text-gray-400 mb-1">Frequency</label>
             <select 
@@ -208,7 +195,7 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
             </select>
           </div>
 
-          {/* Specific Days Selection (Conditional) */}
+          {}
           {frequency === 'specific_days' && (
             <div className='p-3 bg-gray-800 rounded-lg border border-gray-700'>
               <label className='block text-sm font-medium text-gray-400 mb-2'>Select days:</label>
@@ -222,7 +209,7 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
             </div>
           )}
 
-          {/* --- Advanced Options Section --- */}
+          {}
           <div className="mt-4 border-t border-gray-700 pt-4"> 
             <button 
               type="button" 
@@ -235,7 +222,20 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
 
             {isAdvancedOpen && ( 
               <div className="mt-3 space-y-4 pl-2 border-l-2 border-gray-700 ml-1 animate-fade-in"> 
-                {/* Goal End Date Input */}
+                {}
+                <div className=""> 
+                  <label htmlFor="goal" className="block text-sm font-medium text-gray-400 mb-1">Goal (Optional Text, e.g., '5 times', '1 chapter')</label> 
+                  <input 
+                    type="text" 
+                    id="goal"
+                    value={goal}
+                    onChange={(e) => setGoal(e.target.value)} 
+                    className="input-field"
+                    placeholder="e.g., 5 times per week"
+                  />
+                </div> 
+
+                {}
                 <div className=""> 
                   <label htmlFor="goalEndDate" className="block text-sm font-medium text-gray-400 mb-1">Goal End Date (Optional)</label> 
                   <input 
@@ -244,11 +244,11 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
                     value={goalEndDate} 
                     onChange={(e) => setGoalEndDate(e.target.value)} 
                     className="w-full px-3 py-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-teal-500 text-white appearance-none" 
-                    min={new Date().toISOString().split('T')[0]} // Optional: Prevent past dates 
+                    min={new Date().toISOString().split('T')[0]} 
                   /> 
                 </div> 
 
-                {/* Category Selection */}
+                {}
                 <div> 
                   <label htmlFor='categorySelectAdv' className='block text-sm font-medium text-gray-400 mb-1'>Category (Optional)</label> 
                   <select 
@@ -266,7 +266,7 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
                   </select> 
                 </div> 
 
-                {/* --- New Category Form (Conditional inside Advanced) --- */}
+                {}
                 {showNewCategoryForm && ( 
                   <div className='mt-3 p-4 bg-gray-800 border border-gray-700 rounded-lg space-y-3 animate-fade-in'> 
                     <h4 className='text-sm font-medium text-teal-400'>Create New Category</h4> 
@@ -277,7 +277,7 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
                       onChange={(e) => setNewCategoryName(e.target.value)} 
                       className='input-field' 
                     /> 
-                    {/* New Category Icon Selector */}
+                    {}
                     <div> 
                       <label className='block text-xs text-gray-400 mb-1'>Icon (Optional)</label> 
                       <div className='grid grid-cols-6 gap-2 max-h-32 overflow-y-auto p-2 bg-gray-700/50 rounded'> 
@@ -301,7 +301,7 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
                         ))} 
                       </div> 
                     </div> 
-                    {/* New Category Color Selector */}
+                    {}
                     <div> 
                       <label className='block text-xs text-gray-400 mb-1'>Color (Optional)</label> 
                       <div className='flex flex-wrap gap-2'> 
@@ -339,7 +339,7 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
                   </div> 
                 )} 
 
-                {/* Habit Icon Selection */}
+                {}
                 <div> 
                   <label className='block text-sm font-medium text-gray-400 mb-1'>Habit Icon (Optional)</label> 
                   <div className='grid grid-cols-5 gap-2 max-h-32 overflow-y-auto p-2 bg-gray-800/50 rounded'> 
@@ -368,9 +368,9 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
             )} 
           </div>
 
-          {/* Visuals: Color & Icon Selection */}
+          {}
           <div className='grid grid-cols-2 gap-4 pt-2'>
-            {/* Color Selection */}
+            {}
             <div> 
               <label className='block text-sm font-medium text-gray-400 mb-1'>Color Theme (Optional)</label> 
               <div className='flex flex-wrap gap-2'> 
@@ -388,7 +388,7 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({
             </div>
           </div>
 
-          {/* Save Button */}
+          {}
           <div className='mt-8 flex justify-end'> 
             <button 
               onClick={handleAddHabit} 

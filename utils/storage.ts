@@ -48,6 +48,9 @@ export const saveHabits = (habits: Habit[]): void => {
   }
   try {
     localStorage.setItem(HABITS_STORAGE_KEY, JSON.stringify(habits));
+    // Dispatch a custom event to notify other components of the change
+    window.dispatchEvent(new CustomEvent('storageUpdated'));
+    console.log('[storage.ts] Dispatched storageUpdated event.'); // For debugging
   } catch (error) {
     console.error('Error saving habits to localStorage:', error);
   }

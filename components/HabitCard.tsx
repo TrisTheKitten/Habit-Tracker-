@@ -50,7 +50,8 @@ interface HabitCardProps {
 
 const HabitCard: React.FC<HabitCardProps> = ({ habit, today, onToggleComplete, onDelete }) => {
   const todayFormatted = format(today, 'yyyy-MM-dd');
-  const isCompletedToday = habit.completionHistory?.includes(todayFormatted) ?? false;
+  // Use habit.completions to check if the habit is completed today
+  const isCompletedToday = habit.completions?.[todayFormatted] ?? false;
 
   const theme = cardColorThemes[habit.color || 'default'] || cardColorThemes.default;
 
@@ -72,9 +73,10 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit, today, onToggleComplete, o
                 {habit.description && <p className="text-xs text-gray-500 mb-2 break-words font-light italic truncate">{habit.description}</p>}
                 <div className={`flex flex-wrap gap-x-3 gap-y-1 text-xs mt-1 ${theme.iconColor}`}> 
                     <span className='flex items-center gap-1' title={`Frequency: ${getFrequencyText(habit)}`}><Repeat size={11}/> {getFrequencyText(habit)}</span>
-                    {habit.goal && habit.goal > 1 && (
-                        <span className='flex items-center gap-1' title={`Goal: ${habit.goal} times per ${habit.frequency === 'daily' ? 'day' : habit.frequency === 'weekly' ? 'week' : 'month'}`}><Target size={11}/>
-                            {habit.goal} times
+                    {/* Display the goal string directly */} 
+                    {habit.goal && (
+                        <span className='flex items-center gap-1' title={`Goal: ${habit.goal}`}><Target size={11}/>
+                            {habit.goal} 
                         </span>
                     )}
                     {habit.goalEndDate && (
@@ -96,7 +98,8 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit, today, onToggleComplete, o
         <div className='mb-4'>
             <div className='flex justify-between items-center gap-0.5 sm:gap-1'>
                 {last7Days.map((dateStr) => {
-                    const isComplete = habit.completionHistory?.includes(dateStr);
+                    // Use habit.completions to check if the habit was completed on this date
+                    const isComplete = habit.completions?.[dateStr] ?? false;
                     const currentDayDate = parseISO(dateStr);
                     const isFuture = isAfter(currentDayDate, today) && !isSameDay(currentDayDate, today); 
                     const dayInitial = WEEK_DAY_INITIALS[getDay(currentDayDate)]; 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   getHabitData, 
   calculateCompletionRate, 
@@ -18,6 +18,7 @@ import {
 import BadgeDisplay from '../components/BadgeDisplay';
 import * as Icons from 'lucide-react';
 import { Home } from 'lucide-react';
+import { useRouter } from 'next/router';
 
 // PDF Generation
 import jsPDF from 'jspdf';
@@ -25,41 +26,68 @@ import jsPDF from 'jspdf';
 const StatsPage = () => {
   // --- 1. Define ALL hooks unconditionally ---
   const [habits, setHabits] = useState<Habit[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Keep loading state for initial load
+  const habitsRef = useRef<Habit[]>(habits);
+  const router = useRouter();
+  const initialLoadComplete = useRef(false); // Track if initial load happened
 
+  // Effect to keep the ref synchronized with the habits state
   useEffect(() => {
-    // Fetch data only on the client side
-    if (typeof window !== 'undefined') {
-      const data = getHabitData();
-      setHabits(data);
-      setLoading(false);
+    habitsRef.current = habits;
+  }, [habits]);
+
+  // Effect now depends on router readiness and path
+  useEffect(() => {
+    let isMounted = true;
+
+    // Only run if router is ready client-side
+    if (!router.isReady) {
+        // console.log('[StatsPage] Router not ready yet.');
+        return;
     }
-  }, []); // Runs only once on mount
 
-  // Add effect to reload data when the window gains focus
-  useEffect(() => {
-    const handleFocus = () => {
-      if (typeof window !== 'undefined') {
-        console.log('[StatsPage] Window focused. Attempting to reload data...');
-        const data = getHabitData();
-        console.log('[StatsPage] Data loaded on focus:', JSON.stringify(data)); // Log the actual data
-        setHabits(data);
-      }
-    };
+    // console.log(`[StatsPage] Effect running. Path: ${router.asPath}, Ready: ${router.isReady}`);
 
-    window.addEventListener('focus', handleFocus);
+    // Fetch data and update state if it's the stats page
+    if (router.asPath === '/stats') {
+        // console.log('[StatsPage] Path is /stats. Fetching data...');
+        const currentData = getHabitData();
 
-    // Cleanup listener on component unmount
+        if (isMounted) {
+            // Only update if data actually changed
+            if (JSON.stringify(currentData) !== JSON.stringify(habitsRef.current)) {
+                console.log('[StatsPage] Data changed on route change. Updating state.');
+                setHabits(currentData);
+            } else {
+                // console.log('[StatsPage] Data unchanged on route change. Skipping state update.');
+            }
+
+            // Set loading false only after the first successful fetch on this page
+            if (!initialLoadComplete.current) {
+                // console.log('[StatsPage] Initial load complete. Setting loading to false.');
+                setLoading(false);
+                initialLoadComplete.current = true;
+            }
+        }
+    } else {
+        // Optional: Reset loading if navigating away from stats?
+        // if (!loading && initialLoadComplete.current) setLoading(true);
+        // initialLoadComplete.current = false; // Reset initial load flag if navigating away
+    }
+
+    // Cleanup listener and set isMounted to false on component unmount
     return () => {
-      window.removeEventListener('focus', handleFocus);
+      isMounted = false;
+      // console.log('[StatsPage] Effect cleanup.');
     };
-  }, []); // Runs only once to set up the listener
+    // Depend on router readiness and path
+  }, [router.isReady, router.asPath]);
 
   // Calculate all derived stats using useMemo, only when data is ready
   const statsData = useMemo(() => {
-    const today = new Date(); // Define today consistently
+    console.log('[StatsPage] Recalculating statsData...');
+    const today = new Date(); 
 
-    // Return default structure if loading or no habits
     if (loading || habits.length === 0) {
       return {
         today,
@@ -67,10 +95,11 @@ const StatsPage = () => {
         averageMonthlyRate: 0,
         averageOverallConsistency: 0,
         weeklyCompletionData: [],
+        habits: habits,
+        loading: loading,
       };
     }
 
-    // Calculate average rates across all habits
     const totalHabits = habits.length;
     const sumWeeklyRate = habits.reduce((sum, habit) => sum + calculateCompletionRate(habit, 7), 0);
     const sumMonthlyRate = habits.reduce((sum, habit) => sum + calculateCompletionRate(habit, 30), 0);
@@ -80,14 +109,14 @@ const StatsPage = () => {
     const averageMonthlyRate = totalHabits > 0 ? Math.round(sumMonthlyRate / totalHabits) : 0;
     const averageOverallConsistency = totalHabits > 0 ? Math.round(sumOverallConsistency / totalHabits) : 0;
 
-    // We can add logic for weeklyCompletionData later if needed
-
     return {
       today,
       averageWeeklyRate,
       averageMonthlyRate,
       averageOverallConsistency,
-      weeklyCompletionData: [], // Placeholder
+      weeklyCompletionData: [], 
+      habits: habits,
+      loading: loading,
     };
   }, [loading, habits]);
 
@@ -102,7 +131,6 @@ const StatsPage = () => {
     );
   }
 
-  // Check habits.length directly for the empty state
   if (habits.length === 0) {
     return (
       <div className="min-h-screen bg-gray-950 text-gray-300 p-4 md:p-8 font-sans flex flex-col">
@@ -126,45 +154,39 @@ const StatsPage = () => {
 
   // --- PDF Export Handler --- 
   const handleGeneratePdf = () => {
-    // Check habits length again before generating PDF with potentially real data
-    if (habits.length === 0) {
+    if (statsData.habits.length === 0) {
       alert('No habit data available to generate a report.');
       return;
     }
 
     try {
       const doc = new jsPDF();
-      // Destructure needed values from statsData (which now holds real data)
       const { today, averageWeeklyRate, averageOverallConsistency } = statsData;
       
-      let y = 15; // Initial Y position
+      let y = 15; 
 
-      // --- Report Title --- 
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
       doc.text('Habit Tracker - Weekly Report', 14, y);
-      y += 8; // Increase spacing
+      y += 8; 
 
-      // --- Week Date Range --- 
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.text(`Week: ${format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd')} to ${format(endOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd')}`, 14, y);
-      y += 12; // Increase spacing
+      y += 12; 
 
-      // --- Weekly Summary --- 
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.text('Weekly Summary', 14, y);
-      y += 7; // Increase spacing
+      y += 7; 
 
       doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
       doc.text(`- Overall Completion Rate: ${averageWeeklyRate}%`, 14, y);
-      y += 6; // Increase spacing
+      y += 6; 
       doc.text(`- Weekly Consistency Score: ${averageOverallConsistency}%`, 14, y);
-      y += 15; // Increase spacing
+      y += 15; 
 
-      // --- Habit Details --- 
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.text('Habit Details', 14, y);
@@ -173,19 +195,17 @@ const StatsPage = () => {
       doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
 
-      habits.forEach((habit, index) => {
-        if (index > 0) { // Add spacing between habits
+      statsData.habits.forEach((habit, index) => {
+        if (index > 0) { 
           y += 10;
         }
         
-        // Habit Name (Bold)
         doc.setFont('helvetica', 'bold');
         doc.text(habit.name, 14, y);
         y += 6;
         doc.setFont('helvetica', 'normal');
 
-        // Calculate stats for the specific habit
-        const overallRate = calculateCompletionRate(habit, 365); // Example: overall = last year
+        const overallRate = calculateCompletionRate(habit, 365); 
         const currentStreak = calculateCurrentStreak(habit);
         const longestStreak = calculateLongestStreak(habit);
 
@@ -196,37 +216,31 @@ const StatsPage = () => {
         doc.text(`Longest Streak: ${longestStreak} days`, 14, y);
         y += 6;
 
-        // Display weekly status (Mon-Sun)
         let weeklyStatusString = 'Status (Mon-Sun): '; 
         const weekDays = eachDayOfInterval({ start: startOfWeek(today, { weekStartsOn: 1 }), end: endOfWeek(today, { weekStartsOn: 1 }) });
         weekDays.forEach(day => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const isCompleted = habit.completions?.[dateStr];
-          // Use Checkmark for completed, X for not completed
           weeklyStatusString += isCompleted ? '✓ ' : '✗ ';
         });
         doc.text(weeklyStatusString.trim(), 14, y);
         y += 6;
 
-        // Add goal end date if it exists
         if (habit.goalEndDate) {
           doc.text(`Goal Ends: ${format(parseISO(habit.goalEndDate), 'MMM dd, yyyy')}`, 14, y);
           y += 6;
         }
       });
 
-      // Save the PDF
       doc.save(`habit-tracker-weekly-report-${format(today, 'yyyy-MM-dd')}.pdf`);
 
-    } catch (error) { // Catch block remains the same
+    } catch (error) { 
       console.error("Error generating PDF:", error);
       alert("An error occurred while generating the PDF report.");
     }
   };
 
   // --- 4. Main return (uses statsData) ---
-  // If we reach here, loading is false, and habits.length > 0
-  // statsData contains the calculated values
   return (
     <div className="min-h-screen bg-gray-950 text-gray-300 p-4 md:p-8 font-sans flex flex-col">
       <div className="max-w-6xl mx-auto w-full">
@@ -267,7 +281,7 @@ const StatsPage = () => {
             <div className="mt-6">
               <h3 className="text-lg font-medium mb-3 text-gray-300">Overall Completion Rate per Habit:</h3>
               <ul className="list-disc list-inside space-y-1 text-sm text-gray-400">
-                {habits.map((habit: Habit) => ( // Use habits directly here
+                {statsData.habits.map((habit: Habit) => (
                   <li key={habit.id}> 
                     {habit.icon} {habit.name}: {calculateOverallConsistency(habit)}%
                   </li>
@@ -280,10 +294,9 @@ const StatsPage = () => {
           <section className="bg-slate-800 p-6 rounded-lg shadow-md">
             <h2 className="text-2xl font-semibold mb-4 text-gray-100">Milestones & Badges</h2>
             <div className="space-y-5">
-              {habits.map((habit: Habit) => ( // Use habits directly
+              {statsData.habits.map((habit: Habit) => (
                 <BadgeDisplay key={habit.id} habit={habit} />
               ))}
-              {/* Removed redundant empty check here */}
             </div>
           </section>
 
